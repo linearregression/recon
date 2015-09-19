@@ -645,23 +645,7 @@ port_info(PortTerm, specific) ->
                 {ok, Local} -> [{sockname, Local}];
                 {error, _} -> []
             end ++
-            case inet:getopts(Port, [active, broadcast, buffer, delay_send,
-                                     dontroute, exit_on_close, header,
-                                     high_watermark, keepalive,
-                                     linger, low_watermark, mode, nodelay,
-                                     packet, packet_size, priority,
-                                     read_packets, recbuf, reuseaddr,
-                                     send_timeout, sndbuf]) of
-                {ok, Opts} -> 
-                              {OtpMaj, OtpMin} =otp_release(),  
-                              % ipv6_v6only supports start R16                             
-                              case {OtpMaj, OtpMin} =< {15, 3} of
-                                 true -> [{options, Opts}];
-                                 false -> {ok, IpV6Only} = inet:getopts(Port,[ipv6_v6only]),
-                                         [{options, Opts ++ IpV6Only}]
-                              end;
-                {error, _} -> []
-            end;
+            inet_get_opts(Port);
         {_,"efile"} ->
             %% would be nice to support file-specific info, but things
             %% are too vague with the file_server and how it works in
@@ -722,23 +706,29 @@ named_rpc(Nodes=[_|_], Fun, Timeout) when is_function(Fun,0) ->
 named_rpc(Node, Fun, Timeout) when is_atom(Node) ->
     named_rpc([Node], Fun, Timeout).
 
-%% @doc Return current Major Version of running OTP.
--spec otp_release() -> pos_integer().
-otp_release() ->
-    {OtpMaj, OtpMin} = version_tuple(),
-    {OtpMaj, OtpMin}.
+%% @doc (HACK) Inet Otp version does not mean the deployed kernel version matches
+%% People can use an older kernel for whatever reason.
+%% (Hack) to get supported inet options.  
+support_inet_options() ->
+    case inet:options() of
+        {error, _} -> [];
+        Opts when is_list(Opts) -> Opts;
+        _ ->  []
+    end.
 
-%% @doc Get otp release as Version tuple {Major, Minor}.
-version_tuple() ->
-    OtpRelease = erlang:system_info(otp_release),
-    case re:run(OtpRelease, "R?(\\d+)B?-?(\\d+)?", [{capture, all, list}]) of
-        {match, [_Full, Maj, Min]} ->
-            {list_to_integer(Maj), list_to_integer(Min)};
-        {match, [_Full, Maj]} ->
-            {list_to_integer(Maj), 0};
-        nomatch ->
-            {error, undefined}
-    end. 
-
+%% @doc (HACK) Get supported version at runtime, filter out unwanted and include wanted
+%% consider read from tool config file.
+inet_get_opts(Port)->
+    Opts = support_inet_options(),
+    ExcludeOpts = [deliver, high_msgq_watermark, low_msgq_watermark,
+                   multicast_if, multicast_loop, multicast_ttl,
+                   send_timeout_close, show_econnreset,tos],
+    IncludeOpts = [delay_send, packet_size, read_packets],
+    Opts1 = Opts -- ExcludeOpts ++ IncludeOpts,
+    case inet:getopts(Port, Opts1) of
+        {ok, Opts2} -> Opts2;
+        {error, _} -> []
+    end.
+  
 
 
