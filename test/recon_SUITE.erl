@@ -229,8 +229,13 @@ port_info2(Config) ->
 port_info_parallel(Config) ->
     TCP = ?config(tcp, Config),
     UDP = ?config(tcp, Config),
-    {parallelism, [{parallelism,_}]} = recon:port_info(TCP, parallelism),
-    {parallelism, [{parallelism,_}]} = recon:port_info(UDP, parallelism).
+
+    case is_before_R15B03() of
+         true -> badarg = (catch recon:port_info(TCP, parallelism)),
+                 badarg = (catch recon:port_info(UDP, parallelism));
+         false -> {parallelism, [{parallelism, A}]} = recon:port_info(TCP, parallelism),
+                  {parallelism, [{parallelism, A}]} = recon:port_info(UDP, parallelism)
+    end.
 
 %% binary_memory is a created attribute that counts the amount
 %% of memory held by refc binaries, usable in info/2-4 and
@@ -292,3 +297,27 @@ proc_attrs(L) ->
 inet_attrs(L) ->
     lists:all(fun({Port,_Val,List}) -> is_port(Port) andalso is_list(List) end,
               L).
+
+%% @doc Return current Major Version of running OTP.
+-spec otp_release() -> pos_integer().
+otp_release() ->
+    {OtpMaj, OtpMin} = version_tuple(),
+    {OtpMaj, OtpMin}.
+
+%% @doc Get otp release as Version tuple {Major, Minor}.
+version_tuple() ->
+    OtpRelease = erlang:system_info(otp_release),
+    case re:run(OtpRelease, "R?(\\d+)B?-?(\\d+)?", [{capture, all, list}]) of
+        {match, [_Full, Maj, Min]} ->
+            {list_to_integer(Maj), list_to_integer(Min)};
+        {match, [_Full, Maj]} ->
+            {list_to_integer(Maj), 0};
+        nomatch ->
+            {error, undefined}
+    end. 
+
+%% @doc Check if underlying otp release is prior to R15B03
+is_before_R15B03() -> 
+    {OtpMaj, OtpMin} =otp_release(),  
+    {OtpMaj, OtpMin} =< {15, 3}.
+ 
