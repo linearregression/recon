@@ -231,8 +231,7 @@ port_info_parallel(Config) ->
     UDP = ?config(tcp, Config),
 
     case is_before_R15B03() of
-         true -> {'EXIT', {badarg, [{erlang, port_info,_,_},_]}} = (catch recon:port_info(TCP, parallelism)),
-                 {'EXIT', {badarg, [{erlang, port_info,_,_},_]}} = (catch recon:port_info(UDP, parallelism));
+         true -> ok;
          false -> {parallelism, [{parallelism, A}]} = recon:port_info(TCP, parallelism),
                   {parallelism, [{parallelism, A}]} = recon:port_info(UDP, parallelism)
     end.
