@@ -12,7 +12,7 @@ all() -> [{group,info}, proc_count, proc_window, bin_leak,
           inet_count, inet_window, binary_memory, scheduler_usage].
 
 groups() -> [{info, [], [info3, info4, info1, info2,
-                         port_info1, port_info2]}].
+                         port_info1, port_info2, port_info_parallel]}].
 
 init_per_group(info, Config) ->
     Self = self(),
@@ -225,6 +225,12 @@ port_info2(Config) ->
     %% Not testing the whole set, but heeeh. Good enough.
     {io, [{input,_},{output,_}]} = recon:port_info(TCP, io),
     {io, [{input,_},{output,_}]} = recon:port_info(UDP, io).
+
+port_info_parallel(Config) ->
+    TCP = ?config(tcp, Config),
+    UDP = ?config(tcp, Config),
+    {parallelism, [{parallelism,_}]} = recon:port_info(TCP, parallelism),
+    {parallelism, [{parallelism,_}]} = recon:port_info(UDP, parallelism).
 
 %% binary_memory is a created attribute that counts the amount
 %% of memory held by refc binaries, usable in info/2-4 and

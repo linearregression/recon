@@ -125,7 +125,7 @@
 
 -type port_info_type() :: meta | signals | io | memory_used | specific.
 
--type port_info_meta_key() :: registered_name | id | name | os_pid.
+-type port_info_meta_key() :: registered_name | id | name | os_pid | parallelism.
 -type port_info_signals_key() :: connected | links | monitors.
 -type port_info_io_key() :: input | output.
 -type port_info_memory_key() :: memory | queue_size.
@@ -627,6 +627,8 @@ port_info(PortTerm, io) ->
     port_info_type(PortTerm, io, [input, output]);
 port_info(PortTerm, memory_used) ->
     port_info_type(PortTerm, memory_used, [memory, queue_size]);
+port_info(PortTerm, parallelism) ->
+    port_info_type(PortTerm, parallelism, [parallelism]);
 port_info(PortTerm, specific) ->
     Port = recon_lib:term_to_port(PortTerm),
     Props = case erlang:port_info(Port, name) of
