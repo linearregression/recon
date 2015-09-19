@@ -232,7 +232,7 @@ port_info_parallel(Config) ->
 
     case is_before_R15B03() of
          true -> 
-                  ct:pal("Test Skipping... Port Parallelism unsupported in OTP release  ~s",[version_tuple()]),
+                  ct:pal("Test Skipping... Port Parallelism unsupported in OTP release  ~s",[erlang:system_info(otp_release)]),
                   ok;
          false -> {parallelism, [{parallelism, A}]} = recon:port_info(TCP, parallelism),
                   {parallelism, [{parallelism, A}]} = recon:port_info(UDP, parallelism)
